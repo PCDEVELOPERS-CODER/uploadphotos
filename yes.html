@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Capture & Upload Photos with Selfie Verification</title>
+  <style>
+  /* MASS PROFESSIONAL CSS */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to bottom right, #eef2f7, #ffffff);
+  color: #1f2937;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+h2 {
+  margin-bottom: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+video {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  background: black;
+}
+
+/* CONTROLS */
+ .controls {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 1.2rem;
+    flex-wrap: nowrap;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Make capture and upload buttons bigger and centered */
+  #capture, #upload {
+    flex: 1 1 45%;
+    font-size: 1.2rem;
+    padding: 0.75rem 0;
+    border-radius: 14px;
+    font-weight: 700;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  #capture {
+    background: linear-gradient(135deg, #f97316, #c2410c);
+  }
+  #capture:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ea580c, #9a3412);
+    transform: scale(1.05);
+  }
+
+  #upload {
+    background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+  }
+  #upload:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transform: scale(1.05);
+  }
+
+  /* Disable styles */
+  button:disabled {
+    background-color: #9ca3af !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none !important;
+  }
+
+  /* Position switch camera button at bottom right */
+  #toggleCamera {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    padding: 0;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(135deg, #14b8a6, #0f766e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: background 0.3s ease, transform 0.2s ease;
+    z-index: 10000;
+  }
+  #toggleCamera:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0d9488, #0e5e58);
+    transform: scale(1.1);
+  }
+  #toggleCamera:disabled {
+    background-color: #9ca3af !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none !important;
+  }
+
+  /* Responsive tweaks */
+  @media (max-width: 480px) {
+    #capture, #upload {
+      font-size: 1rem;
+      padding: 0.6rem 0;
+    }
+    .controls {
+      max-width: 90vw;
+    }
+  }
+
+/* PREVIEW */
+#preview {
+  margin-top: 1.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  max-width: 400px;
+}
+.preview-wrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.12);
+  background: white;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.preview-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.preview-wrapper button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+.preview-wrapper button:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: scale(1.15);
+}
+
+/* RESPONSE MESSAGE */
+.response {
+  margin-top: 1.4rem;
+  max-width: 360px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  min-height: 24px;
+}
+.success {
+  color: #16a34a;
+}
+.error {
+  color: #dc2626;
+}
+
+/* LOADING OVERLAY */
+.overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 9999;
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 700;
+  user-select: none;
+}
+.loader {
+  margin-bottom: 1rem;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #3b82f6;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+  </style>
+</head>
+<body>
+
+<h2>📸 RM-PHOTOS</h2>
+
+<video id="camera" autoplay playsinline></video>
+
+<div class="controls">
+  <button id="capture" type="button">📷Capture</button>
+  <button id="upload" type="button" > Send Photos</button>
+</div>
+
+<button id="toggleCamera" type="button" title="Switch Camera">🔄 </button>
+<div id="preview"></div>
+<div class="response" id="response"></div>
+
+<!-- Loading Overlay -->
+<div class="overlay" id="loading">
+  <div class="loader"></div>
+  <div>Images are uploading, please wait...</div>
+</div>
+
+<script>
+  const MAX_PHOTOS = 10;
+  let useFrontCamera = true;
+  let capturedImages = [];
+  const video = document.getElementById('camera');
+  const preview = document.getElementById('preview');
+  const responseDiv = document.getElementById('response');
+  const loadingOverlay = document.getElementById('loading');
+  const captureBtn = document.getElementById('capture');
+  const toggleCameraBtn = document.getElementById('toggleCamera');
+  const uploadBtn = document.getElementById('upload');
+
+  // Start camera on page load
+  async function startCamera() {
+    if (window.stream) {
+      window.stream.getTracks().forEach(track => track.stop());
+    }
+    try {
+      const constraints = { video: { facingMode: useFrontCamera ? 'user' : 'environment' } };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      window.stream = stream;
+      video.srcObject = stream;
+    } catch (err) {
+      alert('Camera access denied or not available.');
+    }
+  }
+
+  // Switch camera only allowed after first selfie
+  toggleCameraBtn.addEventListener('click', () => {
+    if (capturedImages.length === 0) {
+      alert('Please capture the first selfie photo before switching cameras.');
+      return;
+    }
+    useFrontCamera = !useFrontCamera;
+    startCamera();
+  });
+
+  // Capture button logic
+  captureBtn.addEventListener('click', async () => {
+    if (capturedImages.length >= MAX_PHOTOS) {
+      alert(`Maximum ${MAX_PHOTOS} photos allowed.`);
+      return;
+    }
+
+    // First photo: must be front camera selfie + add timestamp + location overlay
+    if (capturedImages.length === 0) {
+      if (!useFrontCamera) {
+        alert('First photo must be a selfie taken with the front camera.');
+        return;
+      }
+
+      // Get geolocation
+      let position = null;
+      try {
+        position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+        });
+      } catch (error) {
+        alert('Unable to get location. Please allow location access and try again.');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Overlay timestamp & location text
+      const timestamp = new Date().toLocaleString();
+      ctx.font = '24px sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 3;
+
+      const lines = [
+        `Timestamp: ${timestamp}`,
+        `Location: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`
+      ];
+
+      lines.forEach((line, i) => {
+        const x = 10;
+        const y = canvas.height - 60 + i * 30;
+        ctx.strokeText(line, x, y);
+        ctx.fillText(line, x, y);
+      });
+
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      addCapturedImage(dataUrl);
+
+      // Enable upload and toggle camera now
+      uploadBtn.disabled = false;
+      toggleCameraBtn.disabled = false;
+
+    } else {
+      // Subsequent photos, just normal capture (no overlays)
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      addCapturedImage(dataUrl);
+    }
+  });
+
+  function addCapturedImage(dataUrl) {
+    const imgId = `img-${Date.now()}`;
+
+    // Preview container
+    const wrapper = document.createElement('div');
+    wrapper.className = 'preview-wrapper';
+
+    // Image element
+    const img = document.createElement('img');
+    img.src = dataUrl;
+
+    // Remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '❌';
+    removeBtn.title = "Remove this image";
+    removeBtn.onclick = () => {
+      preview.removeChild(wrapper);
+      capturedImages = capturedImages.filter(item => item.id !== imgId);
+      if (capturedImages.length < MAX_PHOTOS) {
+        captureBtn.disabled = false;
+      }
+      // If first selfie removed, disable upload and toggle camera
+      if (capturedImages.length === 0) {
+        uploadBtn.disabled = true;
+        toggleCameraBtn.disabled = true;
+        useFrontCamera = true;
+        startCamera();
+      }
+    };
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeBtn);
+    preview.appendChild(wrapper);
+
+    capturedImages.push({
+      id: imgId,
+      base64: dataUrl.split(',')[1],
+      filename: `photo_${Date.now()}.jpg`,
+      mimetype: 'image/jpeg'
+    });
+
+    if (capturedImages.length >= MAX_PHOTOS) {
+      captureBtn.disabled = true;
+      alert(`You have captured ${MAX_PHOTOS} photos. Please upload or remove before capturing more.`);
+    }
+  }
+
+  // Upload images to server
+  uploadBtn.addEventListener('click', async () => {
+    responseDiv.textContent = '';
+    if (capturedImages.length === 0) {
+      responseDiv.textContent = 'No images to upload.';
+      responseDiv.className = 'response error';
+      return;
+    }
+
+    loadingOverlay.style.display = 'flex';
+
+    let successCount = 0;
+    // In your upload loop inside `uploadBtn.addEventListener`
+for (const img of capturedImages) {
+  const formData = new URLSearchParams();
+  formData.append("photo", img.base64);
+  formData.append("filename", img.filename);
+  formData.append("mimetype", img.mimetype);
+
+  try {
+    const res = await fetch('https://script.google.com/macros/s/AKfycbwguRNAcGCUc6pSuK5ITx0Ww2gb42HyAoph40tIqYhemigM2QnU9E_I4fBGd1xefMSxSA/exec', 
+    {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: formData
+    });
+    const json = await res.json();
+    if (json.status === 'success') successCount++;
+  } catch (err) {
+    console.error("Upload error:", err);
+  }
+}
+
+    loadingOverlay.style.display = 'none';
+
+    if (successCount === capturedImages.length) {
+      responseDiv.textContent = '✅ All images uploaded successfully!';
+      responseDiv.className = 'response success';
+    } else {
+      responseDiv.textContent = `⚠️ Uploaded ${successCount} out of ${capturedImages.length} images.`;
+      responseDiv.className = 'response error';
+    }
+
+    // Reset everything
+    capturedImages = [];
+    preview.innerHTML = '';
+    captureBtn.disabled = false;
+    uploadBtn.disabled = true;
+    toggleCameraBtn.disabled = true;
+    useFrontCamera = true;
+    startCamera();
+  });
+
+  // Disable toggle camera button initially (before selfie)
+  toggleCameraBtn.disabled = true;
+
+  // Start camera initially
+  startCamera();
+</script>
+
+</body>
+</html>
